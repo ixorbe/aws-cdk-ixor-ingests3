@@ -1,9 +1,16 @@
 {
-  "name": "aws-cdk-ixor-ingests3",
-  "version": "0.1.0",
-  "bin": {
-    "aws-cdk-ixor-ingests3": "bin/aws-cdk-ixor-ingests3.js"
+  "name": "@ixor/aws-cdk-ixor-ingests3",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ixorbe/aws-cdk-ixor-ingests3.git"
   },
+  "license": "MIT",
+  "main": "lib/aws-cdk-ixor-ingests3",
+  "author": "Rik Tytgat <rik.tytgat@ixor.be> (https://github.com/ixorbe/)",
+  "keywords": [
+    "cdk"
+  ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
@@ -22,6 +29,13 @@
   },
   "dependencies": {
     "@aws-cdk/core": "1.25.0",
-    "source-map-support": "^0.5.16"
+    "source-map-support": "^0.5.16",
+    "@aws-cdk/aws-lambda": "latest",
+    "@aws-cdk/aws-lambda-event-sources": "latest",
+    "@aws-cdk/aws-s3": "latest",
+    "@aws-cdk/aws-sqs": "latest",
+    "@aws-cdk/aws-sns": "latest",
+    "@aws-cdk/aws-stepfunctions": "latest",
+    "@aws-cdk/aws-sns-subscriptions": "latest"
   }
 }
