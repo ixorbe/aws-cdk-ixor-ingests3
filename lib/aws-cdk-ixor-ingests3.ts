@@ -17,18 +17,13 @@ export interface Trigger {
     lambda?: IFunction
 }
 
-interface TriggerList extends Array<Trigger> {
-}
-
 interface IngestS3StackProps extends StackProps {
     resourceBaseName: string,
     bucketNameRegex: string
 }
 
 export class IngestS3 extends Stack {
-    private bucket: Bucket;
     private scope: Construct;
-    private id: string;
     private props: IngestS3StackProps;
 
     constructor(scope: Construct, id: string, props: IngestS3StackProps) {
@@ -57,16 +52,11 @@ export class IngestS3 extends Stack {
                 runtime: Runtime.PYTHON_3_7,
             }
         );
-        // this.bucket.grantReadWrite(trigger.lambda);
         trigger.lambda.addEventSource(new SqsEventSource(trigger.queue));
         trigger.lambdaTarget.grantStartPermissionToLambda(this, trigger.lambda);
 
         return trigger.topic;
 
-        // this.bucket.addEventNotification(EventType.OBJECT_CREATED, new SnsDestination(trigger.topic), {
-        //     prefix: trigger.prefix ? trigger.prefix : undefined,
-        //     suffix: trigger.suffix ? trigger.suffix : undefined
-        // })
     }
 }
 
