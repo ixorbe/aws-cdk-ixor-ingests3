@@ -28,7 +28,7 @@ export class IngestS3 extends Construct {
         this.addTrigger(props);
     }
 
-    public addTrigger(props: IngestS3Props): void {
+    addTrigger(props: IngestS3Props): void {
         this.queue = new Queue(this, `${this.node.id}-sqs`, {queueName: `${props.resourceBasename}-sqs`});
         this.topic = new Topic(this, `${this.node.id}-sns`, {topicName: `${props.resourceBasename}-sns`});
         this.topic.addSubscription(new SqsSubscription(this.queue));
