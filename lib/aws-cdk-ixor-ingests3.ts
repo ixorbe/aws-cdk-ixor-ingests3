@@ -1,62 +1,56 @@
 import {Aws, Construct, Stack, StackProps} from "@aws-cdk/core";
 import {Code, Function, IFunction, Runtime} from "@aws-cdk/aws-lambda";
 import {SqsEventSource} from "@aws-cdk/aws-lambda-event-sources";
-import {Bucket} from "@aws-cdk/aws-s3";
 import {Effect, PolicyStatement, ServicePrincipal} from "@aws-cdk/aws-iam";
 import {IQueue, Queue} from "@aws-cdk/aws-sqs";
 import {ITopic, Topic} from "@aws-cdk/aws-sns";
 import {IStateMachine, StateMachine} from "@aws-cdk/aws-stepfunctions";
-import snsSubscriptions = require('@aws-cdk/aws-sns-subscriptions');
+import {SqsSubscription} from "@aws-cdk/aws-sns-subscriptions";
 
-export interface Trigger {
+export interface IngestS3Props extends StackProps {
+    bucketNameRegex: string,
     suffix?: string,
     prefix?: string,
     lambdaTarget: LambdaTarget,
-    queue?: IQueue,
-    topic?: Topic,
-    lambda?: IFunction
+    resourceBasename: string
 }
 
-interface IngestS3StackProps extends StackProps {
-    resourceBaseName: string,
-    bucketNameRegex: string
-}
-
-export class IngestS3 extends Stack {
+export class IngestS3 extends Construct {
     private scope: Construct;
-    private props: IngestS3StackProps;
+    private queue: IQueue;
+    public topic: ITopic;
+    private lambda: IFunction;
 
-    constructor(scope: Construct, id: string, props: IngestS3StackProps) {
-        super(scope, id, props);
+    constructor(scope: Construct, id: string, props: IngestS3Props) {
+        super(scope, id);
+
         this.scope = scope;
-        this.props = props;
+        this.addTrigger(props);
     }
 
-    public addTrigger(trigger: Trigger): ITopic {
-        trigger.queue = new Queue(this, `${this.node.id}-sqs`, {queueName: `${this.props.resourceBaseName}-sqs`});
-        trigger.topic = new Topic(this, `${this.node.id}-sns`, {topicName: `${this.props.resourceBaseName}-sns`});
-        trigger.topic.addSubscription(new snsSubscriptions.SqsSubscription(trigger.queue));
-        trigger.topic.addToResourcePolicy(new PolicyStatement({
+    public addTrigger(props: IngestS3Props): void {
+        this.queue = new Queue(this, `${this.node.id}-sqs`, {queueName: `${props.resourceBasename}-sqs`});
+        this.topic = new Topic(this, `${this.node.id}-sns`, {topicName: `${props.resourceBasename}-sns`});
+        this.topic.addSubscription(new SqsSubscription(this.queue));
+        this.topic.addToResourcePolicy(new PolicyStatement({
             principals: [ new ServicePrincipal("s3.amazonaws.com")],
             effect: Effect.ALLOW,
             actions: ["sns:Publish"],
-            resources: [trigger.topic.topicArn],
-            conditions: {StringLike: {"aws:SourceArn": `arn:aws:s3:::${this.props.bucketNameRegex}`}}
+            resources: [this.topic.topicArn],
+            conditions: {StringLike: {"aws:SourceArn": `arn:aws:s3:::${props.bucketNameRegex}`}}
         }));
-        trigger.lambda = new Function(
+        this.lambda = new Function(
             this, `${this.node.id}-lambda`,
             {
-                functionName: `${this.props.resourceBaseName}-lambda`,
+                functionName: `${props.resourceBasename}-lambda`,
                 code: Code.fromAsset('lambda_s3_trigger'),
                 handler: "lambda_s3_trigger.lambda_handler",
                 runtime: Runtime.PYTHON_3_7,
+                environment: { TARGET_ARN: props.lambdaTarget.getTargetArn() }
             }
         );
-        trigger.lambda.addEventSource(new SqsEventSource(trigger.queue));
-        trigger.lambdaTarget.grantStartPermissionToLambda(this, trigger.lambda);
-
-        return trigger.topic;
-
+        this.lambda.addEventSource(new SqsEventSource(this.queue));
+        props.lambdaTarget.grantStartPermissionToLambda(this, this.lambda);
     }
 }
 
@@ -68,15 +62,20 @@ export abstract class LambdaTarget {
     }
 
     abstract grantStartPermissionToLambda(scope: Construct, lambdaFunction: IFunction): void;
+    abstract getTargetArn(): string;
 }
 
 export class LambdaTargetStateMachine extends LambdaTarget {
     private stateMachine: IStateMachine;
-    private stateMachineName: string;
+    private readonly stateMachineName: string;
 
     constructor(stateMachineName: string) {
         super();
         this.stateMachineName = stateMachineName;
+    }
+
+    public getTargetArn(): string {
+        return `arn:aws:states:${Aws.REGION}:${Aws.ACCOUNT_ID}:stateMachine:${this.stateMachineName}`;
     }
 
     grantStartPermissionToLambda(stack: Stack, lambdaFunction: IFunction): void {
@@ -87,11 +86,15 @@ export class LambdaTargetStateMachine extends LambdaTarget {
 
 export class LambdaTargetLambda extends LambdaTarget {
     private lambdaFunction: IFunction;
-    private lambdaFunctionName: string;
+    private readonly lambdaFunctionName: string;
 
     constructor(lambdaFunctionName: string) {
         super();
         this.lambdaFunctionName = lambdaFunctionName;
+    }
+
+    public getTargetArn(): string {
+        return `arn:aws:lambda:${Aws.REGION}:${Aws.ACCOUNT_ID}:function:${this.lambdaFunctionName}`;
     }
 
     grantStartPermissionToLambda(scope: Construct, lambdaFunction: IFunction): void {
