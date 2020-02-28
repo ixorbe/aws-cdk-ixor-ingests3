@@ -1,6 +1,6 @@
 {
   "name": "@ixor/aws-cdk-ixor-ingests3",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/ixorbe/aws-cdk-ixor-ingests3.git"
@@ -18,24 +18,22 @@
     "cdk": "cdk"
   },
   "devDependencies": {
-    "@aws-cdk/assert": "1.25.0",
     "@types/jest": "^24.0.22",
     "@types/node": "10.17.5",
     "jest": "^24.9.0",
     "ts-jest": "^24.1.0",
-    "aws-cdk": "1.25.0",
     "ts-node": "^8.1.0",
     "typescript": "~3.7.2"
   },
   "dependencies": {
-    "@aws-cdk/core": "1.25.0",
-    "source-map-support": "^0.5.16",
-    "@aws-cdk/aws-lambda": "latest",
-    "@aws-cdk/aws-lambda-event-sources": "latest",
-    "@aws-cdk/aws-s3": "latest",
-    "@aws-cdk/aws-sqs": "latest",
-    "@aws-cdk/aws-sns": "latest",
-    "@aws-cdk/aws-stepfunctions": "latest",
-    "@aws-cdk/aws-sns-subscriptions": "latest"
+    "@aws-cdk/aws-lambda": "^1.26.0",
+    "@aws-cdk/aws-lambda-event-sources": "^1.26.0",
+    "@aws-cdk/aws-s3": "^1.26.0",
+    "@aws-cdk/aws-sns": "^1.26.0",
+    "@aws-cdk/aws-sns-subscriptions": "^1.26.0",
+    "@aws-cdk/aws-sqs": "^1.26.0",
+    "@aws-cdk/aws-stepfunctions": "^1.26.0",
+    "@aws-cdk/core": "^1.26.0",
+    "source-map-support": "^0.5.16"
   }
 }
