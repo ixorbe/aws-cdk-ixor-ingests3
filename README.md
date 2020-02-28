@@ -1,14 +1,48 @@
-# Welcome to your CDK TypeScript project!
+# @ixor/aws-cdk-ixor-ingests3 module
 
-This is a blank project for TypeScript development with CDK.
+This `aws-cdk` stack can be used create the following components:
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+```
++------+                                                               +---------------+
+|      |   +-------IngestS3 Construct-----------------------------+    |               |
+| File |   |                                                      |  +-> Step Function |
+|      |   |                                                      |  | |               |
++--+---+   | +-----------+      +-----------+      +-----------+  |  | +---------------+
+   |       | |           |      |           |      |           +-----+
+   +---------> SNS Topic +------> SQS Queue +------>  Lambda   |  |    +---------------+
+           | |           |      |           |      |           +-----+ |               |
+           | +-----------+      +-----------+      +-----------+  |  +->    Lambda     |
+           |                                                      |    |               |
+           |                                                      |    +---------------+
+           +------------------------------------------------------+
+```
 
-## Useful commands
+The construct is typically used in a stack where the S3 bucket that requires the trigger is created.
 
- * `npm run build`   compile typescript to js
- * `npm run watch`   watch for changes and compile
- * `npm run test`    perform the jest unit tests
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
+An example:
+
+```TypeScript
+import {Stack, StackProps, Construct} from "@aws-cdk/core";
+import {Bucket, HttpMethods, BlockPublicAccess} from "@aws-cdk/aws-s3";
+import {IngestS3, IngestS3Props, LambdaTargetStateMachine} from "@ixor/aws-cdk-ixor-ingests3";
+import {SnsDestination} from "@aws-cdk/aws-s3-notifications";
+
+export class S3Stack extends Stack {
+    public bucket: Bucket;
+
+    constructor(scope: Construct, id: string, props: S3StackProps) {
+        super(scope, id, props);
+
+        this.bucket = new Bucket(this, "myBucket", {bucketName: "myBucket"});
+
+        let ingestS3 = new IngestS3(this, "myIngestS3"`, {
+             bucketNameRegex: "myBuck*",
+             lambdaTarget: new LambdaTargetStateMachine("myStateMachine"),
+             resourceBasename: "myIngestS3"
+         });
+
+        this.bucket.addObjectCreatedNotification(new SnsDestination(ingestS3.topic), {
+            suffix: props.suffix ?? undefined,
+            prefix: props.prefix ?? undefined
+        });
+```

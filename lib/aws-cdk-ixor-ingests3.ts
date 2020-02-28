@@ -1,14 +1,15 @@
 import {Aws, Construct, Stack, StackProps} from "@aws-cdk/core";
 import {Code, Function, IFunction, Runtime} from "@aws-cdk/aws-lambda";
 import {SqsEventSource} from "@aws-cdk/aws-lambda-event-sources";
-import {Effect, PolicyStatement, ServicePrincipal} from "@aws-cdk/aws-iam";
 import {IQueue, Queue} from "@aws-cdk/aws-sqs";
+import {Bucket} from "@aws-cdk/aws-s3";
 import {ITopic, Topic} from "@aws-cdk/aws-sns";
 import {IStateMachine, StateMachine} from "@aws-cdk/aws-stepfunctions";
 import {SqsSubscription} from "@aws-cdk/aws-sns-subscriptions";
+import {SnsDestination} from "@aws-cdk/aws-s3-notifications";
 
 export interface IngestS3Props extends StackProps {
-    bucketNameRegex: string,
+    bucket: Bucket,
     suffix?: string,
     prefix?: string,
     lambdaTarget: LambdaTarget,
@@ -32,13 +33,6 @@ export class IngestS3 extends Construct {
         this.queue = new Queue(this, `${this.node.id}-sqs`, {queueName: `${props.resourceBasename}-sqs`});
         this.topic = new Topic(this, `${this.node.id}-sns`, {topicName: `${props.resourceBasename}-sns`});
         this.topic.addSubscription(new SqsSubscription(this.queue));
-        this.topic.addToResourcePolicy(new PolicyStatement({
-            principals: [ new ServicePrincipal("s3.amazonaws.com")],
-            effect: Effect.ALLOW,
-            actions: ["sns:Publish"],
-            resources: [this.topic.topicArn],
-            conditions: {StringLike: {"aws:SourceArn": `arn:aws:s3:::${props.bucketNameRegex}`}}
-        }));
         this.lambda = new Function(
             this, `${this.node.id}-lambda`,
             {
@@ -51,6 +45,10 @@ export class IngestS3 extends Construct {
         );
         this.lambda.addEventSource(new SqsEventSource(this.queue));
         props.lambdaTarget.grantStartPermissionToLambda(this, this.lambda);
+        props.bucket.addObjectCreatedNotification(new SnsDestination(this.topic), {
+            suffix: props.suffix ?? undefined,
+            prefix: props.prefix ?? undefined
+        });
     }
 }
 
