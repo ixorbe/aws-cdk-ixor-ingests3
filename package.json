@@ -1,6 +1,6 @@
 {
   "name": "@ixor/aws-cdk-ixor-ingests3",
-  "version": "0.0.3-beta.1",
+  "version": "0.0.3-beta.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/ixorbe/aws-cdk-ixor-ingests3.git"
