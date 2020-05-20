@@ -17,7 +17,7 @@ This `aws-cdk` stack can be used create the following components:
            +------------------------------------------------------+
 ```
 
-The construct is typically used in a stack where the S3 bucket that requires the trigger is created.
+Use this construct in a stack where the S3 bucket that requires the trigger is created.
 
 An example:
 
