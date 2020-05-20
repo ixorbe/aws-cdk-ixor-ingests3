@@ -38,7 +38,7 @@ export class IngestS3 extends Construct {
             this, `${this.node.id}-lambda`,
             {
                 functionName: `${props.resourceBasename}-lambda`,
-                code: Code.fromAsset(require.resolve(`lambda_s3_trigger`)),
+                code: Code.fromAsset(require.resolve(`../lambda_s3_trigger`)),
                 handler: "lambda_s3_trigger.lambda_handler",
                 runtime: Runtime.PYTHON_3_7,
                 environment: {
