@@ -7,13 +7,15 @@ import {ITopic, Topic} from "@aws-cdk/aws-sns";
 import {IStateMachine, StateMachine} from "@aws-cdk/aws-stepfunctions";
 import {SqsSubscription} from "@aws-cdk/aws-sns-subscriptions";
 import {SnsDestination} from "@aws-cdk/aws-s3-notifications";
+import path = require('path');
 
 export interface IngestS3Props extends StackProps {
     bucket: Bucket,
     suffix?: string,
     prefix?: string,
     lambdaTarget: LambdaTarget,
-    resourceBasename: string
+    resourceBasename: string,
+    id?: string
 }
 
 export class IngestS3 extends Construct {
@@ -37,10 +39,13 @@ export class IngestS3 extends Construct {
             this, `${this.node.id}-lambda`,
             {
                 functionName: `${props.resourceBasename}-lambda`,
-                code: Code.fromAsset('lambda_s3_trigger'),
+                code: Code.fromAsset(path.join(__dirname, '../lambda_s3_trigger')),
                 handler: "lambda_s3_trigger.lambda_handler",
                 runtime: Runtime.PYTHON_3_7,
-                environment: { TARGET_ARN: props.lambdaTarget.getTargetArn() }
+                environment: {
+                    TARGET_ARN: props.lambdaTarget.getTargetArn(),
+                    ID: props.id ?? 'None'
+                }
             }
         );
         this.lambda.addEventSource(new SqsEventSource(this.queue));
