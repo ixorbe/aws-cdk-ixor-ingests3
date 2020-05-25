@@ -15,7 +15,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "prepublishOnly": "tsc"
   },
   "devDependencies": {
     "@types/jest": "^24.0.22",
