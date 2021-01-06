@@ -70,7 +70,7 @@ def lambda_handler(event, context):
 
                             if 'stateMachine' in envvar_target_arn:
                                 client = boto3.client('stepfunctions')
-                                return_body = client.start_execution(
+                                sfn_return_body = client.start_execution(
                                     stateMachineArn=os.getenv('TARGET_ARN'),
                                     name=f"{correlation_id}",
                                     input=json.dumps({
