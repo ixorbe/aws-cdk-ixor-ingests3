@@ -30,10 +30,7 @@ def lambda_handler(event, context):
     logger.info(f"Starting S3 Trigger Lambda")
     logger.debug(json.dumps(event))
 
-    correlation_id = f"{envvar_id}-{uuid.uuid4()}"
-    logger.info(f"Correlation ID: {correlation_id}")
-
-    processed_events = 0
+    processed_events = 1
     return_body = []
     http_status_code = http.HTTPStatus.OK
 
@@ -55,6 +52,7 @@ def lambda_handler(event, context):
                 elif "Records" in message.keys():
                     for record in message['Records']:
                         if record['eventSource'] == 'aws:s3':
+                            logger.info(f"### Processing event {processed_events} in this batch ###")
                             logger.debug("This is an S3 record:")
                             logger.debug(json.dumps(record))
                             s3_bucket = record['s3']['bucket']['name']
@@ -66,7 +64,13 @@ def lambda_handler(event, context):
 
                             logger.info(f"Processing s3 event notification for {s3_bucket}/{s3_key}")
                             return_body.append({"bucket": s3_bucket, "key": s3_key})
-                            processed_events += 1
+
+                            if envvar_id == "":
+                                correlation_id = f"{uuid.uuid4()}"
+                            else:
+                                correlation_id = f"{envvar_id}-{uuid.uuid4()}"
+
+                            logger.info(f"Correlation ID: {correlation_id}")
 
                             if 'stateMachine' in envvar_target_arn:
                                 client = boto3.client('stepfunctions')
@@ -84,6 +88,10 @@ def lambda_handler(event, context):
                                 message = f"TARGET_ARN '{envvar_target_arn}' is invalid or not supported by this lambda"
                                 logger.error(message)
                                 return_body = "{}"
+
+                            logger.info(f"### Finished processing event {processed_events} in this batch ###")
+                            processed_events += 1
+
 
     return {
         "statusCode": http_status_code,
